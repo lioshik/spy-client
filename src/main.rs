@@ -1,7 +1,6 @@
 #![windows_subsystem = "windows"]
-use std::env;
 
-use teloxide::prelude::*;
+mod telegram_client;
 
 #[tokio::main]
 async fn main() {
@@ -9,14 +8,6 @@ async fn main() {
 }
 
 async fn run() {
-    println!("start");
-
-    let bot = Bot::new(env::var("spy-token").unwrap()).auto_send();
-
-    teloxide::repl(bot, |message| async move {
-        println!("message received");
-        message.answer("hello").await?;
-        respond(())
-    })
-        .await;
+    let client = telegram_client::TelegramClient::from_env().await;
+    client.send_text(String::from("some text")).await;
 }

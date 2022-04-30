@@ -48,7 +48,7 @@ async fn run() {
                     save_screenshot(&filename);
                     client.send_image(&filename).await;
                 }
-                tokio::time::sleep(Duration::from_millis(300)).await;
+                tokio::time::sleep(Duration::from_millis(30)).await;
             }
         });
     }

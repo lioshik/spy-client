@@ -63,7 +63,7 @@ impl Screenshot {
 
     /// Raw bitmap.
     #[inline]
-    pub unsafe fn raw_data(&self) -> *const u8 {
+    pub fn raw_data(&self) -> *const u8 {
         &self.data[0] as *const u8
     }
 

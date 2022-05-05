@@ -1,6 +1,7 @@
 #![windows_subsystem = "windows"]
 
 use std::fmt::format;
+use std::ops::Sub;
 use std::sync::mpsc::Sender;
 use crate::screen_capture::save_screenshot;
 
@@ -55,7 +56,7 @@ async fn run() {
     let start = SystemTime::now();
     let (req_sender, mut req_receiver) = mpsc::channel::<oneshot::Sender<String>>(32);
     tokio::spawn(async move {
-        let mut last_time = SystemTime::now();
+        let mut last_time = SystemTime::now().sub(Duration::from_millis(1000000));
         while let Some(mut responder) = req_receiver.recv().await{
             if SystemTime::now().duration_since(last_time).unwrap().as_millis() > SEND_PHOTO_INTERVAL_MILLIS {
                 last_time = SystemTime::now();

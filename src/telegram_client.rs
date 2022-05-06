@@ -1,6 +1,8 @@
 use teloxide::prelude::*;
 use teloxide::types;
 use std::env;
+use std::fs::File;
+use std::io::{Cursor, Write};
 use teloxide::types::InputFile;
 
 pub struct TelegramClient {
@@ -23,11 +25,11 @@ impl TelegramClient {
         self.bot.send_message(self.chat_id, text).send().await;
     }
 
-    pub async fn send_image(&self, filename: &String) {
-        self.bot.send_photo(self.chat_id, InputFile::file(filename)).send().await;
+    pub async fn send_image(&self, vec: Vec<u8>) {
+        self.bot.send_photo(self.chat_id, InputFile::memory(vec)).send().await;
     }
 
-    pub async fn send_image_withcaption(&self, filename: &String, caption: String) {
-        self.bot.send_photo(self.chat_id, InputFile::file(filename)).caption(caption).send().await;
+    pub async fn send_image_withcaption(&self, vec: Vec<u8>, caption: String) {
+        self.bot.send_photo(self.chat_id, InputFile::memory(vec)).caption(caption).send().await;
     }
 }

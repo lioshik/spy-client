@@ -192,7 +192,7 @@ fn keycode_to_string(k: u8) -> String {
         0xBD => { "VK_OEM_MINUS".to_string() }
         0xBE => { "VK_OEM_PERIOD .> | Ю".to_string() }
         0xBF => { "VK_OEM_2 /? | .,".to_string() }
-        0xC0 => { "VK_OEM_3".to_string() }
+        0xC0 => { "VK_OEM_3 | Ё".to_string() }
         0xDB => { "VK_OEM_4 [{ | Х".to_string() }
         0xDC => { "VK_OEM_5 \\|".to_string() }
         0xDD => { "VK_OEM_6 ]} | Ъ".to_string() }

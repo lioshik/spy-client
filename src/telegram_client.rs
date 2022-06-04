@@ -11,10 +11,12 @@ pub struct TelegramClient {
 }
 
 impl TelegramClient {
-    pub async fn from_env() -> TelegramClient {
+    pub async fn from_env(message: String) -> TelegramClient {
         let bot = Bot::new(env::var("spy-token").unwrap());
         let chat_id = env::var("spy-user-id").unwrap().parse::<i64>().unwrap();
-        bot.send_message(chat_id, "session started").send().await;
+        if message != "" {
+            bot.send_message(chat_id, message).send().await;
+        }
         TelegramClient {
             bot,
             chat_id

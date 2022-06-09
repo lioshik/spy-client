@@ -1,6 +1,11 @@
+use std::borrow::Borrow;
+use std::cmp::min;
 use std::error::Error;
+use std::fs;
+use std::path::{Path, PathBuf};
 use teloxide::Bot;
 use teloxide::prelude2::{AutoSend, Message, Requester};
+use teloxide::types::InputFile;
 use teloxide::utils::command::BotCommand;
 use crate::TelegramClient;
 
@@ -11,6 +16,10 @@ pub struct TelegramFileClient {
 impl TelegramFileClient {
     pub async fn from_env(message: String) -> TelegramFileClient {
         let client = TelegramClient::from_env(message).await;
+        client.bot.set_my_commands([
+            teloxide::types::BotCommand{command: "showdir".to_string(), description: "/showdir <path to directory>".to_string()},
+            teloxide::types::BotCommand{command: "sendfile".to_string(), description: "/sendfile <path to file>".to_string()},
+        ].into_iter()).await;
         TelegramFileClient {
             client
         }
@@ -37,10 +46,82 @@ async fn answer(
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     match command {
         Command::ShowDir => {
-            bot.send_message(message.chat.id, "show dir comand").await?;
+            let message_text = message.text().unwrap();
+            if message_text.len() <= 9 {
+                bot.send_message(message.chat.id, "Error: empty path").await?;
+            } else {
+                let path = &message_text[9..];
+                bot.send_message(message.chat.id, format!("Scanning \"{}\".....", path)).await?;
+                if Path::new(path).exists() {
+                    if (Path::new(path).is_dir()) {
+                        let result = fs::read_dir(path);
+                        if (result.is_ok()) {
+                            let paths = result.unwrap();
+                            let mut text_files = "".to_string();
+                            let mut text_dirs = "".to_string();
+                            for path in paths {
+                                if (path.is_err()) {
+                                } else {
+                                    if (Path::new(path.as_ref().unwrap().path().to_str().unwrap()).is_dir()) {
+                                        text_dirs.push_str(&*format!("📂 {}", path.unwrap().path().to_str().unwrap()));
+                                        text_dirs.push_str("\n\n");
+                                    } else {
+                                        text_files.push_str(&*format!("📄 {}", path.unwrap().path().to_str().unwrap()));
+                                        text_files.push_str("\n\n");
+                                    }
+                                }
+                            }
+                            let mut text = "".to_string();
+                            text.push_str(&*text_dirs);
+                            text.push_str(&*text_files);
+                            if text.len() == 0 {
+                                bot.send_message(message.chat.id, "Error: empty directory").await;
+                            } else {
+                                const MESSAGE_MAX_SIZE: usize = 3500;
+                                let message_count = (text.len() + MESSAGE_MAX_SIZE - 1) / MESSAGE_MAX_SIZE;
+                                for i in 0..message_count {
+                                    if (message_count == 1) {
+                                        bot.send_message(message.chat.id,
+                                                         &text[i * MESSAGE_MAX_SIZE..min(text.len(), (i + 1) * MESSAGE_MAX_SIZE)]).await;
+                                    } else {
+                                        let part_of_text = format!("[message is too long, show part {} of {}]\n\n{}", i + 1, message_count,
+                                                                   &text[i * MESSAGE_MAX_SIZE..min(text.len(), (i + 1) * MESSAGE_MAX_SIZE)]);
+                                        bot.send_message(message.chat.id, part_of_text).await;
+                                    }
+                                }
+                            }
+                        } else {
+                            bot.send_message(message.chat.id, "Error: unable to read directory").await?;
+                        }
+                    } else {
+                        bot.send_message(message.chat.id, "Error: path leads to file, not direcotory").await?;
+                    }
+                } else {
+                    bot.send_message(message.chat.id, "Error: path does not exists").await?;
+                }
+            }
         }
         Command::SendFile => {
-            bot.send_message(message.chat.id, "send file comand").await?;
+            let message_text = message.text().unwrap();
+            if message_text.len() <= 10 {
+                bot.send_message(message.chat.id, "Error: empty path").await?;
+            } else {
+                let path = &message_text[10..];
+                bot.send_message(message.chat.id, format!("Sending \"{}\".....", path)).await?;
+                if Path::new(path).exists() {
+                    if Path::new(path).is_file() {
+                        let result = bot.send_document(message.chat.id, InputFile::file(
+                            PathBuf::from(path))).await;
+                        if result.is_err() {
+                            bot.send_message(message.chat.id, format!("Error: {}", result.err().unwrap().to_string())).await?;
+                        }
+                    } else {
+                        bot.send_message(message.chat.id, "Error: path leads to directory, not file").await?;
+                    }
+                } else {
+                    bot.send_message(message.chat.id, "Error: path does not exists").await?;
+                }
+            }
         }
     };
 

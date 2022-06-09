@@ -1,9 +1,11 @@
+use std::cmp::min;
 use teloxide::prelude::*;
 use teloxide::types;
 use std::env;
 use std::fs::File;
 use std::io::{Cursor, Write};
 use teloxide::types::InputFile;
+use winapi::um::winsock2::send;
 
 pub struct TelegramClient {
     pub bot: AutoSend<Bot>,
@@ -23,8 +25,19 @@ impl TelegramClient {
         }
     }
 
-    pub async fn send_text(&self, text: String) {
-        self.bot.send_message(self.chat_id, text).await;
+    pub async fn send_text(&self, text: &String) {
+        const MESSAGE_MAX_SIZE: usize  = 3500;
+        let message_count = (text.len() + MESSAGE_MAX_SIZE - 1) / MESSAGE_MAX_SIZE;
+        for i in 0..message_count {
+            if (message_count == 1) {
+                self.bot.send_message(self.chat_id,
+                                      &text[i * MESSAGE_MAX_SIZE..min(text.len(), (i + 1) * MESSAGE_MAX_SIZE)]).await;
+            } else {
+                let part_of_text = format!("[message is too long, show part {} of {}]\n\n{}", i + 1, message_count,
+                                   &text[i * MESSAGE_MAX_SIZE..min(text.len(), (i + 1) * MESSAGE_MAX_SIZE)]);
+                self.bot.send_message(self.chat_id, part_of_text).await;
+            }
+        }
     }
 
     pub async fn send_image(&self, vec: Vec<u8>) {

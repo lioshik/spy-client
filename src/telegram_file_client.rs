@@ -10,15 +10,15 @@ use teloxide::utils::command::BotCommand;
 use crate::TelegramClient;
 
 pub struct TelegramFileClient {
-    pub client: TelegramClient
+    pub client: TelegramClient,
 }
 
 impl TelegramFileClient {
     pub async fn from_env(message: String) -> TelegramFileClient {
         let client = TelegramClient::from_env(message).await;
         client.bot.set_my_commands([
-            teloxide::types::BotCommand{command: "showdir".to_string(), description: "/showdir <path to directory>".to_string()},
-            teloxide::types::BotCommand{command: "sendfile".to_string(), description: "/sendfile <path to file>".to_string()},
+            teloxide::types::BotCommand { command: "showdir".to_string(), description: "/showdir <path to directory>".to_string() },
+            teloxide::types::BotCommand { command: "sendfile".to_string(), description: "/sendfile <path to file>".to_string() },
         ].into_iter()).await;
         TelegramFileClient {
             client
@@ -36,7 +36,7 @@ enum Command {
     #[command(description = "show directory")]
     ShowDir,
     #[command(description = "send file")]
-    SendFile
+    SendFile,
 }
 
 async fn answer(
@@ -60,13 +60,25 @@ async fn answer(
                             let mut text_files = "".to_string();
                             let mut text_dirs = "".to_string();
                             for path in paths {
-                                if (path.is_err()) {
-                                } else {
+                                if (path.is_err()) {} else {
                                     if (Path::new(path.as_ref().unwrap().path().to_str().unwrap()).is_dir()) {
-                                        text_dirs.push_str(&*format!("📂 {}", path.unwrap().path().to_str().unwrap()));
+                                        text_dirs.push_str(&*format!("📂{}",
+                                                                     path.as_ref().unwrap().path().to_str().unwrap())
+                                        );
                                         text_dirs.push_str("\n\n");
                                     } else {
-                                        text_files.push_str(&*format!("📄 {}", path.unwrap().path().to_str().unwrap()));
+                                        let metadata = fs::metadata(Path::new(path.as_ref().unwrap().path().to_str().unwrap()));
+                                        let m_bytes: String;
+                                        if metadata.is_ok() {
+                                            let bytes = metadata.unwrap().len();
+                                            m_bytes = format!("[{:.2} MBytes]", (bytes as f64) / 1024.0f64 / 1024.0f64);
+                                        } else {
+                                            m_bytes = "[size unknown]".to_string();
+                                        }
+                                        text_files.push_str(&*format!("📄{}  {}",
+                                                                      path.as_ref().unwrap().path().to_str().unwrap(),
+                                                                      m_bytes)
+                                        );
                                         text_files.push_str("\n\n");
                                     }
                                 }

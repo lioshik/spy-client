@@ -90,14 +90,15 @@ async fn answer(
                                 bot.send_message(message.chat.id, "Error: empty directory").await;
                             } else {
                                 const MESSAGE_MAX_SIZE: usize = 3500;
-                                let message_count = (text.len() + MESSAGE_MAX_SIZE - 1) / MESSAGE_MAX_SIZE;
+                                let text_vec = text.chars().collect::<Vec<_>>();
+                                let message_count = (text_vec.len() + MESSAGE_MAX_SIZE - 1) / MESSAGE_MAX_SIZE;
                                 for i in 0..message_count {
                                     if (message_count == 1) {
                                         bot.send_message(message.chat.id,
-                                                         &text[i * MESSAGE_MAX_SIZE..min(text.len(), (i + 1) * MESSAGE_MAX_SIZE)]).await;
+                                                         &text.to_string()).await;
                                     } else {
                                         let part_of_text = format!("[message is too long, show part {} of {}]\n\n{}", i + 1, message_count,
-                                                                   &text[i * MESSAGE_MAX_SIZE..min(text.len(), (i + 1) * MESSAGE_MAX_SIZE)]);
+                                                                   text_vec[i * MESSAGE_MAX_SIZE..min(text_vec.len(), (i + 1) * MESSAGE_MAX_SIZE)].iter().cloned().collect::<String>());
                                         bot.send_message(message.chat.id, part_of_text).await;
                                     }
                                 }
